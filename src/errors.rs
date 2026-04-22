@@ -2,12 +2,19 @@ use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 use serde::Serialize;
 use thiserror::Error;
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[derive(Debug, Clone, Copy)]
+#[repr(u32)]
 pub enum ErrorCode {
-    UnknownQueryParam,
-    MissingParam,
-    InvalidParam,
+    Unauthorized      = 1000,
+    UnknownQueryParam = 1001,
+    MissingParam      = 1002,
+    InvalidParam      = 1003,
+}
+
+impl Serialize for ErrorCode {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_u32(*self as u32)
+    }
 }
 
 #[derive(Serialize)]

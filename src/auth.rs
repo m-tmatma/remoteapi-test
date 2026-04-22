@@ -4,6 +4,7 @@ use actix_web::{
     http::header::{self, HeaderValue},
     Error, HttpResponse,
 };
+use crate::errors::ErrorCode;
 use serde::Deserialize;
 use std::{
     collections::{HashMap, HashSet},
@@ -221,7 +222,7 @@ where
                     .insert_header((header::WWW_AUTHENTICATE, www_auth))
                     .json(serde_json::json!({
                         "result": false,
-                        "code": "UNAUTHORIZED",
+                        "code": ErrorCode::Unauthorized as u32,
                         "message": "Authentication required"
                     }));
                 Ok(req.into_response(response).map_into_right_body())
