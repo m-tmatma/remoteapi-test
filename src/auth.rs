@@ -236,3 +236,57 @@ where
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_config() -> DigestAuthConfig {
+        DigestAuthConfig::new(
+            "Remote API".to_string(),
+            vec![UserEntry { username: "admin".to_string(), password: "password".to_string() }],
+        )
+    }
+
+    #[test]
+    fn ha1_is_md5_of_username_realm_password() {
+        let config = make_config();
+        let expected = format!("{:x}", md5::compute("admin:Remote API:password"));
+        assert_eq!(config.users["admin"], expected);
+    }
+
+    #[test]
+    fn nonce_can_be_issued_and_consumed_once() {
+        let config = make_config();
+        let nonce = config.issue_nonce();
+        assert!(config.consume_nonce(&nonce));
+        assert!(!config.consume_nonce(&nonce));
+    }
+
+    #[test]
+    fn parse_valid_digest_header() {
+        let hdr = concat!(
+            r#"Digest username="admin", realm="Remote API", "#,
+            r#"nonce="abc123", uri="/api/v1/hello", "#,
+            r#"nc=00000001, cnonce="xyz789", qop=auth, response="deadbeef""#
+        );
+        let f = parse_digest_header(hdr).unwrap();
+        assert_eq!(f.username, "admin");
+        assert_eq!(f.realm,    "Remote API");
+        assert_eq!(f.nonce,    "abc123");
+        assert_eq!(f.nc,       "00000001");
+        assert_eq!(f.cnonce,   "xyz789");
+        assert_eq!(f.qop,      "auth");
+        assert_eq!(f.response, "deadbeef");
+    }
+
+    #[test]
+    fn parse_rejects_basic_auth() {
+        assert!(parse_digest_header("Basic dXNlcjpwYXNz").is_none());
+    }
+
+    #[test]
+    fn parse_rejects_incomplete_digest_header() {
+        assert!(parse_digest_header(r#"Digest realm="test""#).is_none());
+    }
+}

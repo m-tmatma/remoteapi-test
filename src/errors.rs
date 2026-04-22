@@ -59,3 +59,29 @@ impl ResponseError for ApiError {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::body::to_bytes;
+
+    #[test]
+    fn error_code_numeric_values() {
+        assert_eq!(serde_json::to_value(ErrorCode::Unauthorized).unwrap(),      1000);
+        assert_eq!(serde_json::to_value(ErrorCode::UnknownQueryParam).unwrap(), 1001);
+        assert_eq!(serde_json::to_value(ErrorCode::MissingParam).unwrap(),      1002);
+        assert_eq!(serde_json::to_value(ErrorCode::InvalidParam).unwrap(),      1003);
+    }
+
+    #[actix_web::test]
+    async fn unknown_query_param_response() {
+        let err = ApiError::UnknownQueryParam("foo".to_string());
+        let resp = err.error_response();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+        let bytes = to_bytes(resp.into_body()).await.unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(body["result"], false);
+        assert_eq!(body["code"],   1001);
+        assert_eq!(body["message"], "Unknown query parameter: foo");
+    }
+}
