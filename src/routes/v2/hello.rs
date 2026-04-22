@@ -8,13 +8,13 @@ pub struct HelloParams {
     name: Option<String>,
 }
 
-const KNOWN_KEYS: &[&str] = &["name"];
+const HELLO_KNOWN_KEYS: &[&str] = &["name"];
 
 pub async fn hello(
     req: HttpRequest,
     params: web::Query<HelloParams>,
 ) -> Result<HttpResponse, ApiError> {
-    let known: HashSet<&str> = KNOWN_KEYS.iter().copied().collect();
+    let known: HashSet<&str> = HELLO_KNOWN_KEYS.iter().copied().collect();
     if let Some(qs) = req.uri().query() {
         for (key, _) in form_urlencoded::parse(qs.as_bytes()) {
             if !known.contains(key.as_ref()) {
@@ -26,6 +26,34 @@ pub async fn hello(
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "result": true,
         "message": format!("Hello, {}!", name)
+    })))
+}
+
+#[derive(Deserialize)]
+pub struct ShowHelloParams {
+    greeting: String,
+    name: Option<String>,
+}
+
+const SHOW_HELLO_KNOWN_KEYS: &[&str] = &["greeting", "name"];
+
+pub async fn show_hello(
+    req: HttpRequest,
+    params: web::Query<ShowHelloParams>,
+) -> Result<HttpResponse, ApiError> {
+    let known: HashSet<&str> = SHOW_HELLO_KNOWN_KEYS.iter().copied().collect();
+    if let Some(qs) = req.uri().query() {
+        for (key, _) in form_urlencoded::parse(qs.as_bytes()) {
+            if !known.contains(key.as_ref()) {
+                return Err(ApiError::UnknownQueryParam(key.into_owned()));
+            }
+        }
+    }
+    let greeting = params.greeting.as_str();
+    let name = params.name.as_deref().unwrap_or("world");
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "result": true,
+        "message": format!("{}, {}!", greeting, name)
     })))
 }
 
@@ -46,7 +74,7 @@ mod tests {
     }
 
     #[actix_web::test]
-    async fn returns_default_greeting_without_params() {
+    async fn returns_default_name_without_name_param() {
         let app = test::init_service(App::new().route("/hello", web::get().to(hello))).await;
         let req = test::TestRequest::get().uri("/hello").to_request();
         let body: serde_json::Value = test::read_body_json(test::call_service(&app, req).await).await;
@@ -68,6 +96,32 @@ mod tests {
     async fn rejects_only_unknown_param() {
         let app = test::init_service(App::new().route("/hello", web::get().to(hello))).await;
         let req = test::TestRequest::get().uri("/hello?bar=baz").to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+        let body: serde_json::Value = test::read_body_json(resp).await;
+        assert_eq!(body["code"], 1001);
+    }
+
+    #[actix_web::test]
+    async fn show_hello_uses_custom_greeting() {
+        let app = test::init_service(App::new().route("/show_hello", web::get().to(show_hello))).await;
+        let req = test::TestRequest::get().uri("/show_hello?greeting=Hi&name=Alice").to_request();
+        let body: serde_json::Value = test::read_body_json(test::call_service(&app, req).await).await;
+        assert_eq!(body["message"], "Hi, Alice!");
+    }
+
+    #[actix_web::test]
+    async fn show_hello_missing_greeting_returns_400() {
+        let app = test::init_service(App::new().route("/show_hello", web::get().to(show_hello))).await;
+        let req = test::TestRequest::get().uri("/show_hello?name=Alice").to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[actix_web::test]
+    async fn show_hello_rejects_unknown_param() {
+        let app = test::init_service(App::new().route("/show_hello", web::get().to(show_hello))).await;
+        let req = test::TestRequest::get().uri("/show_hello?greeting=Hi&foo=bar").to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
         let body: serde_json::Value = test::read_body_json(resp).await;

@@ -101,6 +101,34 @@ assert_eq "v2 unknown param: code=$CODE_UNKNOWN_QUERY_PARAM" "$CODE_UNKNOWN_QUER
 RESP=$(body --digest -u admin:password "$BASE/api/v2/hello")
 assert_eq "v2 no param → Hello, world!" "Hello, world!" "$(json_field "$RESP" message)"
 
+echo ""
+echo "--- v1/show_hello: greeting param, unknown params ignored ---"
+
+RESP=$(body --digest -u admin:password "$BASE/api/v1/show_hello?greeting=Hi&name=Alice")
+assert_eq "v1 show_hello custom greeting"        "True"      "$(json_field "$RESP" result)"
+assert_eq "v1 show_hello message=Hi, Alice!"     "Hi, Alice!" "$(json_field "$RESP" message)"
+
+STATUS=$(http_status --digest -u admin:password "$BASE/api/v1/show_hello?name=Alice")
+assert_eq "v1 show_hello missing greeting → 400" "400" "$STATUS"
+
+STATUS=$(http_status --digest -u admin:password "$BASE/api/v1/show_hello?greeting=Hi&name=Alice&foo=bar")
+assert_eq "v1 show_hello unknown param → 200"    "200" "$STATUS"
+
+echo ""
+echo "--- v2/show_hello: greeting param, unknown params rejected ---"
+
+RESP=$(body --digest -u admin:password "$BASE/api/v2/show_hello?greeting=Hi&name=Alice")
+assert_eq "v2 show_hello custom greeting"        "Hi, Alice!" "$(json_field "$RESP" message)"
+
+STATUS=$(http_status --digest -u admin:password "$BASE/api/v2/show_hello?name=Alice")
+assert_eq "v2 show_hello missing greeting → 400" "400" "$STATUS"
+
+STATUS=$(http_status --digest -u admin:password "$BASE/api/v2/show_hello?greeting=Hi&name=Alice&foo=bar")
+assert_eq "v2 show_hello unknown param → 400"    "400" "$STATUS"
+
+RESP=$(body --digest -u admin:password "$BASE/api/v2/show_hello?greeting=Hi&foo=bar")
+assert_eq "v2 show_hello unknown param: code=$CODE_UNKNOWN_QUERY_PARAM" "$CODE_UNKNOWN_QUERY_PARAM" "$(json_field "$RESP" code)"
+
 # -----------------------------------------------------------------------
 # summary
 # -----------------------------------------------------------------------

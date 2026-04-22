@@ -15,6 +15,21 @@ pub async fn hello(params: web::Query<HelloParams>) -> Result<HttpResponse, ApiE
     })))
 }
 
+#[derive(Deserialize)]
+pub struct ShowHelloParams {
+    greeting: String,
+    name: Option<String>,
+}
+
+pub async fn show_hello(params: web::Query<ShowHelloParams>) -> Result<HttpResponse, ApiError> {
+    let greeting = params.greeting.as_str();
+    let name = params.name.as_deref().unwrap_or("world");
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "result": true,
+        "message": format!("{}, {}!", greeting, name)
+    })))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -47,5 +62,21 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK);
         let body: serde_json::Value = test::read_body_json(resp).await;
         assert_eq!(body["message"], "Hello, Alice!");
+    }
+
+    #[actix_web::test]
+    async fn show_hello_uses_custom_greeting() {
+        let app = test::init_service(App::new().route("/show_hello", web::get().to(show_hello))).await;
+        let req = test::TestRequest::get().uri("/show_hello?greeting=Hi&name=Alice").to_request();
+        let body: serde_json::Value = test::read_body_json(test::call_service(&app, req).await).await;
+        assert_eq!(body["message"], "Hi, Alice!");
+    }
+
+    #[actix_web::test]
+    async fn show_hello_missing_greeting_returns_400() {
+        let app = test::init_service(App::new().route("/show_hello", web::get().to(show_hello))).await;
+        let req = test::TestRequest::get().uri("/show_hello?name=Alice").to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     }
 }
