@@ -1,7 +1,7 @@
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use serde::Deserialize;
 use std::collections::HashSet;
-use crate::errors::ApiError;
+use crate::errors::{ApiError, ErrorCode};
 
 #[derive(Deserialize)]
 pub struct HelloParams {
@@ -103,7 +103,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
         let body: serde_json::Value = test::read_body_json(resp).await;
-        assert_eq!(body["code"], 2);
+        assert_eq!(body["code"], ErrorCode::UnknownQueryParam as u32);
     }
 
     // greeting を指定したとき "{greeting}, {name}!" が返ることを確認する
@@ -132,6 +132,6 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
         let body: serde_json::Value = test::read_body_json(resp).await;
-        assert_eq!(body["code"], 2);
+        assert_eq!(body["code"], ErrorCode::UnknownQueryParam as u32);
     }
 }
