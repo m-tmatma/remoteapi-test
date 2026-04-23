@@ -65,6 +65,7 @@ mod tests {
     use super::*;
     use actix_web::body::to_bytes;
 
+    // ErrorCode の各 variant が定義通りの数値にシリアライズされることを確認する
     #[test]
     fn error_code_numeric_values() {
         assert_eq!(serde_json::to_value(ErrorCode::Unauthorized).unwrap(),      1);
@@ -73,6 +74,7 @@ mod tests {
         assert_eq!(serde_json::to_value(ErrorCode::InvalidParam).unwrap(),      4);
     }
 
+    // ApiError を返したとき HTTP 400 になり、JSON ボディに result/code/message が含まれることを確認する
     #[actix_web::test]
     async fn unknown_query_param_response() {
         let err = ApiError::UnknownQueryParam("foo".to_string());

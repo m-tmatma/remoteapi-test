@@ -62,6 +62,7 @@ mod tests {
     use super::*;
     use actix_web::{http::StatusCode, test, App};
 
+    // name を指定したとき "Hello, {name}!" が返ることを確認する
     #[actix_web::test]
     async fn returns_greeting_with_known_param() {
         let app = test::init_service(App::new().route("/hello", web::get().to(hello))).await;
@@ -73,6 +74,7 @@ mod tests {
         assert_eq!(body["message"], "Hello, Alice!");
     }
 
+    // name を省略したとき "Hello, world!" が返ることを確認する
     #[actix_web::test]
     async fn returns_default_name_without_name_param() {
         let app = test::init_service(App::new().route("/hello", web::get().to(hello))).await;
@@ -81,6 +83,7 @@ mod tests {
         assert_eq!(body["message"], "Hello, world!");
     }
 
+    // v2 では未知のパラメータを含むリクエストが 400 になり code=2 が返ることを確認する
     #[actix_web::test]
     async fn rejects_unknown_param() {
         let app = test::init_service(App::new().route("/hello", web::get().to(hello))).await;
@@ -92,6 +95,7 @@ mod tests {
         assert_eq!(body["code"],   2);
     }
 
+    // 既知パラメータなしで未知パラメータだけ渡しても 400 になることを確認する
     #[actix_web::test]
     async fn rejects_only_unknown_param() {
         let app = test::init_service(App::new().route("/hello", web::get().to(hello))).await;
@@ -102,6 +106,7 @@ mod tests {
         assert_eq!(body["code"], 2);
     }
 
+    // greeting を指定したとき "{greeting}, {name}!" が返ることを確認する
     #[actix_web::test]
     async fn show_hello_uses_custom_greeting() {
         let app = test::init_service(App::new().route("/show_hello", web::get().to(show_hello))).await;
@@ -110,6 +115,7 @@ mod tests {
         assert_eq!(body["message"], "Hi, Alice!");
     }
 
+    // greeting を省略したとき 400 が返ることを確認する
     #[actix_web::test]
     async fn show_hello_missing_greeting_returns_400() {
         let app = test::init_service(App::new().route("/show_hello", web::get().to(show_hello))).await;
@@ -118,6 +124,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     }
 
+    // show_hello でも未知パラメータを含むリクエストが 400 になり code=2 が返ることを確認する
     #[actix_web::test]
     async fn show_hello_rejects_unknown_param() {
         let app = test::init_service(App::new().route("/show_hello", web::get().to(show_hello))).await;

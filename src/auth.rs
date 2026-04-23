@@ -248,6 +248,7 @@ mod tests {
         )
     }
 
+    // DigestAuthConfig 生成時に HA1 = MD5(username:realm:password) が正しく計算されることを確認する
     #[test]
     fn ha1_is_md5_of_username_realm_password() {
         let config = make_config();
@@ -255,6 +256,7 @@ mod tests {
         assert_eq!(config.users["admin"], expected);
     }
 
+    // 発行した nonce は 1 回だけ消費でき、2 回目は拒否されることを確認する（リプレイ攻撃対策）
     #[test]
     fn nonce_can_be_issued_and_consumed_once() {
         let config = make_config();
@@ -263,6 +265,7 @@ mod tests {
         assert!(!config.consume_nonce(&nonce));
     }
 
+    // 正しい形式の Authorization: Digest ヘッダーから各フィールドが正しく抽出されることを確認する
     #[test]
     fn parse_valid_digest_header() {
         let hdr = concat!(
@@ -280,11 +283,13 @@ mod tests {
         assert_eq!(f.response, "deadbeef");
     }
 
+    // Basic 認証ヘッダーは Digest ではないため None を返すことを確認する
     #[test]
     fn parse_rejects_basic_auth() {
         assert!(parse_digest_header("Basic dXNlcjpwYXNz").is_none());
     }
 
+    // 必須フィールド (username, nonce, response 等) が欠けている場合に None を返すことを確認する
     #[test]
     fn parse_rejects_incomplete_digest_header() {
         assert!(parse_digest_header(r#"Digest realm="test""#).is_none());
