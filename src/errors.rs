@@ -5,10 +5,10 @@ use thiserror::Error;
 #[derive(Debug, Clone, Copy)]
 #[repr(u32)]
 pub enum ErrorCode {
-    Unauthorized      = 1000,
-    UnknownQueryParam = 1001,
-    MissingParam      = 1002,
-    InvalidParam      = 1003,
+    Unauthorized      = 1,
+    UnknownQueryParam = 2,
+    MissingParam      = 3,
+    InvalidParam      = 4,
 }
 
 impl Serialize for ErrorCode {
@@ -67,10 +67,10 @@ mod tests {
 
     #[test]
     fn error_code_numeric_values() {
-        assert_eq!(serde_json::to_value(ErrorCode::Unauthorized).unwrap(),      1000);
-        assert_eq!(serde_json::to_value(ErrorCode::UnknownQueryParam).unwrap(), 1001);
-        assert_eq!(serde_json::to_value(ErrorCode::MissingParam).unwrap(),      1002);
-        assert_eq!(serde_json::to_value(ErrorCode::InvalidParam).unwrap(),      1003);
+        assert_eq!(serde_json::to_value(ErrorCode::Unauthorized).unwrap(),      1);
+        assert_eq!(serde_json::to_value(ErrorCode::UnknownQueryParam).unwrap(), 2);
+        assert_eq!(serde_json::to_value(ErrorCode::MissingParam).unwrap(),      3);
+        assert_eq!(serde_json::to_value(ErrorCode::InvalidParam).unwrap(),      4);
     }
 
     #[actix_web::test]
@@ -81,7 +81,7 @@ mod tests {
         let bytes = to_bytes(resp.into_body()).await.unwrap();
         let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(body["result"], false);
-        assert_eq!(body["code"],   1001);
+        assert_eq!(body["code"],   2);
         assert_eq!(body["message"], "Unknown query parameter: foo");
     }
 }

@@ -89,7 +89,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
         let body: serde_json::Value = test::read_body_json(resp).await;
         assert_eq!(body["result"], false);
-        assert_eq!(body["code"],   1001);
+        assert_eq!(body["code"],   2);
     }
 
     #[actix_web::test]
@@ -99,7 +99,7 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
         let body: serde_json::Value = test::read_body_json(resp).await;
-        assert_eq!(body["code"], 1001);
+        assert_eq!(body["code"], 2);
     }
 
     #[actix_web::test]
@@ -125,6 +125,6 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
         let body: serde_json::Value = test::read_body_json(resp).await;
-        assert_eq!(body["code"], 1001);
+        assert_eq!(body["code"], 2);
     }
 }

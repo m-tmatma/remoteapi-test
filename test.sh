@@ -6,10 +6,10 @@ PASS=0
 FAIL=0
 
 # error codes (must match ErrorCode enum in src/errors.rs)
-CODE_UNAUTHORIZED=1000
-CODE_UNKNOWN_QUERY_PARAM=1001
-CODE_MISSING_PARAM=1002
-CODE_INVALID_PARAM=1003
+CODE_UNAUTHORIZED=1
+CODE_UNKNOWN_QUERY_PARAM=2
+CODE_MISSING_PARAM=3
+CODE_INVALID_PARAM=4
 
 # -----------------------------------------------------------------------
 # helpers
