@@ -25,6 +25,7 @@ struct ErrorBody {
 }
 
 #[derive(Debug, Error)]
+#[allow(dead_code)]
 pub enum ApiError {
     #[error("Unknown query parameter: {0}")]
     UnknownQueryParam(String),
@@ -59,6 +60,7 @@ impl ResponseError for ApiError {
         })
     }
 }
+
 
 #[cfg(test)]
 mod tests {

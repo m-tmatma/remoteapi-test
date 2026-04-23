@@ -1,7 +1,7 @@
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use serde::Deserialize;
 use std::collections::HashSet;
-use crate::errors::{ApiError, ErrorCode};
+use crate::errors::ApiError;
 
 #[derive(Deserialize)]
 pub struct HelloParams {
@@ -31,7 +31,7 @@ pub async fn hello(
 
 #[derive(Deserialize)]
 pub struct ShowHelloParams {
-    greeting: String,
+    greeting: Option<String>,
     name: Option<String>,
 }
 
@@ -49,7 +49,8 @@ pub async fn show_hello(
             }
         }
     }
-    let greeting = params.greeting.as_str();
+    let greeting = params.greeting.as_deref()
+        .ok_or_else(|| ApiError::MissingParam("greeting".to_string()))?;
     let name = params.name.as_deref().unwrap_or("world");
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "result": true,
@@ -61,6 +62,7 @@ pub async fn show_hello(
 mod tests {
     use super::*;
     use actix_web::{http::StatusCode, test, App};
+    use crate::errors::ErrorCode;
 
     // name を指定したとき "Hello, {name}!" が返ることを確認する
     #[actix_web::test]
@@ -115,13 +117,17 @@ mod tests {
         assert_eq!(body["message"], "Hi, Alice!");
     }
 
-    // greeting を省略したとき 400 が返ることを確認する
+    // greeting を省略したとき 400 になり code=3, message が返ることを確認する
     #[actix_web::test]
     async fn show_hello_missing_greeting_returns_400() {
         let app = test::init_service(App::new().route("/show_hello", web::get().to(show_hello))).await;
         let req = test::TestRequest::get().uri("/show_hello?name=Alice").to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+        let body: serde_json::Value = test::read_body_json(resp).await;
+        assert_eq!(body["result"],  false);
+        assert_eq!(body["code"],    ErrorCode::MissingParam as u32);
+        assert_eq!(body["message"], "Missing required parameter: greeting");
     }
 
     // show_hello でも未知パラメータを含むリクエストが 400 になり code=2 が返ることを確認する
