@@ -94,7 +94,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
         let body: serde_json::Value = test::read_body_json(resp).await;
         assert_eq!(body["result"], false);
-        assert_eq!(body["code"],   2);
+        assert_eq!(body["code"],   ErrorCode::UnknownQueryParam as u32);
     }
 
     // 既知パラメータなしで未知パラメータだけ渡しても 400 になることを確認する

@@ -3,6 +3,8 @@ mod errors;
 mod routes;
 
 use actix_web::{App, HttpServer};
+
+const PORT: u16 = 8080;
 use auth::{CredentialsFile, DigestAuth, DigestAuthConfig};
 use std::sync::Arc;
 
@@ -22,7 +24,7 @@ async fn main() -> std::io::Result<()> {
             .configure(routes::v1::configure)
             .configure(routes::v2::configure)
     })
-    .bind(("0.0.0.0", 8080))?
+    .bind(("0.0.0.0", PORT))?
     .run()
     .await
 }

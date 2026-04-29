@@ -85,7 +85,7 @@ mod tests {
         let bytes = to_bytes(resp.into_body()).await.unwrap();
         let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(body["result"], false);
-        assert_eq!(body["code"],   2);
+        assert_eq!(body["code"],   ErrorCode::UnknownQueryParam as u32);
         assert_eq!(body["message"], "Unknown query parameter: foo");
     }
 }
