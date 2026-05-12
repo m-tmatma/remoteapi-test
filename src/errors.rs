@@ -34,7 +34,7 @@ pub enum ApiError {
     MissingParam(String),
 
     #[error("Invalid parameter value for '{field}': {reason}")]
-    InvalidParam { field: &'static str, reason: String },
+    InvalidParam { field: String, reason: String },
 }
 
 impl ApiError {
@@ -87,5 +87,21 @@ mod tests {
         assert_eq!(body["result"], false);
         assert_eq!(body["code"],   ErrorCode::UnknownQueryParam as u32);
         assert_eq!(body["message"], "Unknown query parameter: foo");
+    }
+
+    // ApiError::InvalidParam を返したとき HTTP 400 になり code=4 が返ることを確認する
+    #[actix_web::test]
+    async fn invalid_param_response() {
+        let err = ApiError::InvalidParam {
+            field: "count".to_string(),
+            reason: "must be a positive integer".to_string(),
+        };
+        let resp = err.error_response();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+        let bytes = to_bytes(resp.into_body()).await.unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(body["result"], false);
+        assert_eq!(body["code"],   ErrorCode::InvalidParam as u32);
+        assert_eq!(body["message"], "Invalid parameter value for 'count': must be a positive integer");
     }
 }
