@@ -5,7 +5,7 @@
 空の Rust プロジェクトに actix-web で `/api/v1/` と `/api/v2/` を実装する。
 両バージョンの違いは未知クエリパラメータの扱い: v1 は無視、v2 はエラー。
 全レスポンスに `result` (bool) を含める: 成功時 `true`、失敗時 `false`。
-エラーはすべて `{"result": false, "code": 1001, "message": "..."}` の JSON で自動返却。`code` は数値 (u32)。
+エラーはすべて `{"result": false, "code": 2, "message": "..."}` の JSON で自動返却。`code` は数値 (u32)。
 全エンドポイントに Digest 認証を適用。認証情報は `credentials.json` から読み込む。
 
 ---
@@ -115,7 +115,7 @@ cargo build && cargo run
 
 # 認証なし → 401
 curl "http://localhost:8080/api/v1/hello"
-# → {"result":false,"code":1000,"message":"Authentication required"}
+# → {"result":false,"code":1,"message":"Authentication required"}
 
 # v1: 未知パラメータは無視
 curl --digest -u admin:password "http://localhost:8080/api/v1/hello?name=Alice&foo=bar"
@@ -123,7 +123,7 @@ curl --digest -u admin:password "http://localhost:8080/api/v1/hello?name=Alice&f
 
 # v2: 未知パラメータはエラー
 curl --digest -u admin:password "http://localhost:8080/api/v2/hello?name=Alice&foo=bar"
-# → {"result":false,"code":1001,"message":"Unknown query parameter: foo"}
+# → {"result":false,"code":2,"message":"Unknown query parameter: foo"}
 
 # show_hello: greeting 必須
 curl --digest -u admin:password "http://localhost:8080/api/v1/show_hello?greeting=Hi&name=Alice"
@@ -131,12 +131,12 @@ curl --digest -u admin:password "http://localhost:8080/api/v1/show_hello?greetin
 
 # greeting 省略 → 400
 curl --digest -u admin:password "http://localhost:8080/api/v1/show_hello?name=Alice"
-# → 400 Bad Request
+# → {"result":false,"code":3,"message":"Missing required parameter: greeting"}
 ```
 
 ## テスト
 
 ```bash
-cargo test        # Rust 単体テスト (19 件)
+cargo test        # Rust 単体テスト (20 件)
 bash test.sh      # curl 統合テスト (21 件)
 ```
